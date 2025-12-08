@@ -1,0 +1,9 @@
+helpfinder/
+node_modules/
+.env
+dist/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+temp_analysis/
