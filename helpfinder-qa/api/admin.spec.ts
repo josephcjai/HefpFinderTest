@@ -20,7 +20,7 @@ describe('Admin & Super Admin Capability', () => {
         // Use 127.0.0.1 to avoid localhost ambiguity
         const env = {
             ...process.env,
-            DATABASE_URL: 'postgres://postgres:postgres@127.0.0.1:5432/helpfinder'
+            DATABASE_URL: 'postgres://postgres:postgres@127.0.0.1:5432/helpfinder_test'
         };
 
         console.log(`Executing ${scriptName} in ${projectRoot} for ${email}`);
@@ -84,31 +84,62 @@ describe('Admin & Super Admin Capability', () => {
         expect(res.data.role).toBe('admin');
     });
 
+    it('Promoted Admin should be able to ACT as an Admin (View Users)', async () => {
+        // 1. Logic as the new Admin
+        const loginRes = await apiClient.post('/auth/login', {
+            email: candidateUser.email,
+            password: candidateUser.password
+        });
+        const adminToken = loginRes.data.access_token;
+
+        // 2. Try to view users (Admin-only endpoint)
+        const res = await apiClient.get('/users', {
+            headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.data)).toBe(true);
+    });
+
+    it('Super Admin should be able to DEMOTE an Admin back to User', async () => {
+        const res = await apiClient.patch(`/users/${candidateUser.userId}/role`, {
+            role: 'user'
+        }, {
+            headers: { Authorization: `Bearer ${superUser.token}` }
+        });
+        expect(res.status).toBe(200);
+        expect(res.data.role).toBe('user');
+
+        // Verify they lost access
+        const loginRes = await apiClient.post('/auth/login', {
+            email: candidateUser.email,
+            password: candidateUser.password
+        });
+        const userToken = loginRes.data.access_token;
+
+        const checkRes = await apiClient.get('/users', {
+            headers: { Authorization: `Bearer ${userToken}` }
+        });
+        expect(checkRes.status).toBe(403);
+    });
+
     it('Super Admin should NOT be able to DEMOTE themselves (Safety Check)', async () => {
-        try {
-            await apiClient.patch(`/users/${superUser.userId}/role`, {
-                role: 'user'
-            }, {
-                headers: { Authorization: `Bearer ${superUser.token}` }
-            });
-            throw new Error('Should have thrown 403');
-        } catch (error: any) {
-            // Expect 403 Forbidden
-            expect(error.response?.status).toBe(403);
-        }
+        const res = await apiClient.patch(`/users/${superUser.userId}/role`, {
+            role: 'user'
+        }, {
+            headers: { Authorization: `Bearer ${superUser.token}` }
+        });
+
+        // Expect 403 Forbidden
+        expect(res.status).toBe(403);
     });
 
     it('Super Admin should NOT be able to DELETE themselves (Safety Check)', async () => {
-        try {
-            await apiClient.delete(`/users/${superUser.userId}`, {
-                headers: { Authorization: `Bearer ${superUser.token}` }
-            });
-            throw new Error('Should have thrown 403 or 400');
-        } catch (error: any) {
-            console.log('Self-Delete Status:', error.response?.status);
-            if (error.message && error.message.includes('Should have thrown')) throw error;
-            expect([400, 403]).toContain(error.response?.status);
-        }
+        const res = await apiClient.delete(`/users/${superUser.userId}`, {
+            headers: { Authorization: `Bearer ${superUser.token}` }
+        });
+
+        // Expect 403 Forbidden or 400 Bad Request
+        expect([400, 403]).toContain(res.status);
     });
 
     it('Super Admin should be able to DELETE another user', async () => {

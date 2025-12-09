@@ -4,7 +4,8 @@
     "description": "Standalone QA automation suite for HelpFinder",
     "scripts": {
         "test": "jest",
-        "test:e2e": "playwright test"
+        "test:e2e": "playwright test",
+        "sync-env": "node scripts/sync-test-env.js"
     },
     "devDependencies": {
         "@playwright/test": "^1.42.1",
