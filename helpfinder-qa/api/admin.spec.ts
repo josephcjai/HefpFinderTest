@@ -23,11 +23,13 @@ describe('Admin & Super Admin Capability', () => {
             DATABASE_URL: 'postgres://postgres:postgres@127.0.0.1:5432/helpfinder_test'
         };
 
-        console.log(`Executing ${scriptName} in ${projectRoot} for ${email}`);
+        // console.log(`Executing ${scriptName} in ${projectRoot} for ${email}`);
         try {
             const { stdout, stderr } = await execAsync(`npm run ${scriptName} -- ${email}`, { cwd: projectRoot, env });
-            console.log(`${scriptName} Output:`, stdout);
-            if (stderr) console.error(`${scriptName} Stderr:`, stderr);
+            // console.log(`${scriptName} Output:`, stdout);
+            if (stderr) {
+                // console.error(`${scriptName} Stderr:`, stderr);
+            }
         } catch (e: any) {
             console.error(`${scriptName} Failed in ${projectRoot}`);
             console.error('Message:', e.message);
