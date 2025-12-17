@@ -61,10 +61,11 @@ describe('Avatar & Icon Features', () => {
 
     describe('Category Icons (Admin)', () => {
         let categoryId: string
+        const categoryName = `Tech Support ${Date.now()}`
 
         it('should allow Admin to create category with Icon', async () => {
             const res = await apiClient.post('/categories', {
-                name: 'Tech Support',
+                name: categoryName,
                 icon: 'laptop',
                 color: 'blue'
             }, {
@@ -78,7 +79,7 @@ describe('Avatar & Icon Features', () => {
 
         it('should allow Admin to UPDATE category Icon', async () => {
             const res = await apiClient.patch(`/categories/${categoryId}`, {
-                name: 'Tech Support',
+                name: categoryName,
                 icon: 'desktop', // Changed
                 color: 'cyan'    // Changed
             }, {
