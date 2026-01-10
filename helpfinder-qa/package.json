@@ -3,7 +3,9 @@
     "version": "1.0.0",
     "description": "Standalone QA automation suite for HelpFinder",
     "scripts": {
-        "test": "jest",
+        "test": "jest --testPathIgnorePatterns=email.spec.ts",
+        "test:email": "jest api/email.spec.ts",
+        "test:all": "jest",
         "test:e2e": "playwright test",
         "sync-env": "node scripts/sync-test-env.js"
     },
