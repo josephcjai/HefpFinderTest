@@ -27,7 +27,7 @@ test('Admin Page Security: Access verification', async ({ page }) => {
     // We check if url is NOT /admin or if we see "Access Denied"
 
     const url = page.url();
-    const isDenied = url !== 'http://localhost:3000/admin'; // Simple check
+    const isDenied = url !== 'http://localhost:3001/admin'; // Simple check
 
     if (!isDenied) {
         // If we are on admin page, check for "Authorized" content?

@@ -1,5 +1,64 @@
 import { authenticatedClient, createTestUser } from './utils/api-client';
 
+describe('Cancel Bids API', () => {
+    let requesterCtx: { token: string; userId: string };
+    let helperCtx: { token: string; userId: string };
+    let taskId: string;
+    let bidId: string;
+
+    beforeAll(async () => {
+        requesterCtx = await createTestUser('REQUESTER');
+        helperCtx = await createTestUser('HELPER');
+    }, 60000);
+
+    it('setup: should create a task and place a bid', async () => {
+        const reqClient = authenticatedClient(requesterCtx.token);
+        const helperClient = authenticatedClient(helperCtx.token);
+
+        // Create task
+        const taskRes = await reqClient.post('/tasks', {
+            title: 'Cancel Bid Test Task',
+            description: 'Testing bid cancellation',
+            budgetMin: 50,
+            budgetMax: 100,
+            latitude: 40.7128,
+            longitude: -74.0060,
+            address: '123 Test St',
+            country: 'Country',
+            zipCode: '12345'
+        });
+        expect(taskRes.status).toBe(201);
+        taskId = taskRes.data.id;
+
+        // Place bid
+        const bidRes = await helperClient.post(`/tasks/${taskId}/bids`, {
+            amount: 75,
+            message: 'I will do it'
+        });
+        expect(bidRes.status).toBe(201);
+        bidId = bidRes.data.id;
+    });
+
+    it('should allow helper to withdraw (cancel) their bid', async () => {
+        if (!bidId) return;
+        const helperClient = authenticatedClient(helperCtx.token);
+
+        const res = await helperClient.delete(`/bids/${bidId}`);
+        // Expect 200 or 204 depending on implementation
+        expect([200, 201, 204]).toContain(res.status);
+    });
+
+    it('should confirm the withdrawn bid no longer appears in the task bids', async () => {
+        if (!taskId) return;
+        const reqClient = authenticatedClient(requesterCtx.token);
+
+        const bidsRes = await reqClient.get(`/tasks/${taskId}/bids`);
+        expect(bidsRes.status).toBe(200);
+        const stillExists = bidsRes.data.find((b: any) => b.id === bidId);
+        expect(stillExists).toBeUndefined();
+    });
+});
+
 describe('Tasks API', () => {
     let requesterCtx: { token: string; userId: string };
     let helperCtx: { token: string; userId: string };

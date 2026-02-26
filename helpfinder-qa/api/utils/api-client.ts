@@ -1,6 +1,8 @@
 import axios from 'axios';
+import { Client } from 'pg';
 
-const API_URL = process.env.API_URL || 'http://127.0.0.1:4000';
+const API_URL = process.env.API_URL || 'http://127.0.0.1:4001';
+const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:5432/helpfinder_test';
 
 export const apiClient = axios.create({
     baseURL: API_URL,
@@ -41,12 +43,24 @@ export const createTestUser = async (role: 'REQUESTER' | 'HELPER') => {
         if (!token) throw new Error(`Login failed after register: ${loginRes.status}`);
     }
 
-    // Fetch userId
+    // Connect to DB and force the role
+    const client = new Client({ connectionString: DATABASE_URL });
+    await client.connect();
+
+    // Auth profile response needs user id
     let userId = registerRes.data.id;
     if (!userId && token) {
         const profileRes = await authenticatedClient(token).get('/auth/profile');
         userId = profileRes.data.id || profileRes.data.sub;
     }
+
+    if (userId) {
+        await client.query('UPDATE "users" SET role = $1 WHERE id = $2', [role.toLowerCase(), userId]);
+    }
+
+    await client.end();
+
+
 
     return { email, password, token, userId };
 };
