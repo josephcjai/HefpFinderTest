@@ -89,8 +89,26 @@ test.describe('Reviews E2E (Dual Rating)', () => {
 
         // --- Profile Verification ---
         console.log('Verifying review on Helper profile');
-        await page.goto(`/profile/${helper.id}`);
-        await expect(page.locator('text=Excellent work by the helper in E2E!')).toBeVisible({ timeout: 10000 });
+        // Log out Requester and log in as Helper to see the modal
+        await page.evaluate(() => window.localStorage.clear());
+        await page.evaluate(() => window.sessionStorage.clear());
+        await page.goto('/login');
+        await page.locator('input[type="email"]').fill(helper.email);
+        await page.locator('input[type="password"]').fill(helper.password);
+        await page.locator('button[type="submit"]').click();
+        await expect(page).toHaveURL('/', { timeout: 10000 });
+
+        // Go to helper profile
+        await page.goto('/profile');
+        await page.waitForLoadState('networkidle');
+
+        // Switch to Profile Settings tab where the rating badges are located
+        await page.getByRole('button', { name: 'Profile Settings' }).click();
+
+        // Open the helper reviews modal
+        await page.getByRole('button', { name: /Helper/i }).first().click();
+        await expect(page.locator('.fixed.inset-0')).toBeVisible();
+        await expect(page.locator('.fixed.inset-0').getByText('Excellent work by the helper in E2E!', { exact: false })).toBeVisible({ timeout: 15000 });
     });
 
     test('Helper can rate and review the requester', async ({ page }) => {
@@ -128,8 +146,26 @@ test.describe('Reviews E2E (Dual Rating)', () => {
 
         // --- Profile Verification ---
         console.log('Verifying review on Requester profile');
-        await page.goto(`/profile/${requester.id}`);
-        await expect(page.locator('text=Great requester, paid on time (E2E)!')).toBeVisible({ timeout: 10000 });
+        // Log out Helper and log in as Requester to see the modal
+        await page.evaluate(() => window.localStorage.clear());
+        await page.evaluate(() => window.sessionStorage.clear());
+        await page.goto('/login');
+        await page.locator('input[type="email"]').fill(requester.email);
+        await page.locator('input[type="password"]').fill(requester.password);
+        await page.locator('button[type="submit"]').click();
+        await expect(page).toHaveURL('/', { timeout: 10000 });
+
+        // Go to requester profile
+        await page.goto('/profile');
+        await page.waitForLoadState('networkidle');
+
+        // Switch to Profile Settings tab where the rating badges are located
+        await page.getByRole('button', { name: 'Profile Settings' }).click();
+
+        // Open the requester reviews modal
+        await page.getByRole('button', { name: /Requester/i }).first().click();
+        await expect(page.locator('.fixed.inset-0')).toBeVisible();
+        await expect(page.locator('.fixed.inset-0').getByText('Great requester, paid on time (E2E)!', { exact: false })).toBeVisible({ timeout: 15000 });
     });
 });
 
