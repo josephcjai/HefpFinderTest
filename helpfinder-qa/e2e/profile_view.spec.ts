@@ -21,7 +21,7 @@ test.describe('Profile View', () => {
 
         // 2. Go to Profile (Direct Navigation)
         await page.goto('/profile');
-        await expect(page.getByText('My Dashboard')).toBeVisible();
+        await expect(page.getByText('My Activity')).toBeVisible();
 
         // 3. Check Tabs
         const settingsTab = page.getByText('Profile Settings');

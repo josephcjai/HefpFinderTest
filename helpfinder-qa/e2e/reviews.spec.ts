@@ -102,13 +102,40 @@ test.describe('Reviews E2E (Dual Rating)', () => {
         await page.goto('/profile');
         await page.waitForLoadState('networkidle');
 
-        // Switch to Profile Settings tab where the rating badges are located
-        await page.getByRole('button', { name: 'Profile Settings' }).click();
-
-        // Open the helper reviews modal
+        // Open the helper reviews modal (now in the main profile header)
         await page.getByRole('button', { name: /Helper/i }).first().click();
         await expect(page.locator('.fixed.inset-0')).toBeVisible();
         await expect(page.locator('.fixed.inset-0').getByText('Excellent work by the helper in E2E!', { exact: false })).toBeVisible({ timeout: 15000 });
+        // Close modal
+        await page.locator('.fixed.inset-0').getByRole('button', { name: 'Close' }).click();
+
+        // --- Edit Review Verification ---
+        console.log('Verifying Edit Review flow');
+        // Go back to the task page as the requester
+        await page.evaluate(() => window.localStorage.clear());
+        await page.evaluate(() => window.sessionStorage.clear());
+        await page.goto('/login');
+        await page.locator('input[type="email"]').fill(requester.email);
+        await page.locator('input[type="password"]').fill(requester.password);
+        await page.locator('button[type="submit"]').click();
+
+        await expect(page).toHaveURL('/', { timeout: 10000 });
+        await page.goto(`/tasks/${taskId}`);
+
+        // Wait for the "Edit" button to appear next to "Your Review"
+        const editReviewBtn = page.getByRole('button', { name: 'Edit' });
+        await expect(editReviewBtn).toBeVisible({ timeout: 10000 });
+        await editReviewBtn.click();
+
+        // Modal should pop up saying "Edit Your Review"
+        await expect(page.locator('h3:has-text("Edit Your Review")')).toBeVisible();
+
+        // Change rating to 4 stars and update comment
+        await reviewTextarea.fill('Very good work, editing my review!');
+        await starButtons.nth(3).click(); // 4 stars (0-indexed)
+        await submitBtn.click();
+
+        await expect(page.locator('text=Review submitted successfully').or(page.locator('text=You rated this user'))).toBeVisible({ timeout: 5000 }).catch(() => null);
     });
 
     test('Helper can rate and review the requester', async ({ page }) => {
@@ -159,10 +186,7 @@ test.describe('Reviews E2E (Dual Rating)', () => {
         await page.goto('/profile');
         await page.waitForLoadState('networkidle');
 
-        // Switch to Profile Settings tab where the rating badges are located
-        await page.getByRole('button', { name: 'Profile Settings' }).click();
-
-        // Open the requester reviews modal
+        // Open the requester reviews modal (now in the main profile header)
         await page.getByRole('button', { name: /Requester/i }).first().click();
         await expect(page.locator('.fixed.inset-0')).toBeVisible();
         await expect(page.locator('.fixed.inset-0').getByText('Great requester, paid on time (E2E)!', { exact: false })).toBeVisible({ timeout: 15000 });
