@@ -92,4 +92,16 @@ describe('Email Service Integration (SMTP)', () => {
         expect(res.status).toBeGreaterThanOrEqual(200);
         expect(res.status).toBeLessThan(300);
     });
+
+    it('should trigger Password Changed Security Email', async () => {
+        // Change the helper's password to trigger the email
+        const client = authenticatedClient(helperCtx.token);
+        const res = await client.patch('/users/me/password', {
+            currentPassword: 'password123',
+            newPassword: 'S3curePassword!'
+        });
+
+        // Assert: 200 OK means the mailer successfully dispatched the warning notification
+        expect(res.status).toBe(200);
+    });
 });
